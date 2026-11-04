@@ -1,0 +1,49 @@
+#!/usr/bin/make -f
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026 The Blueberry Pie OS Authors
+
+include /usr/share/pietoolchain/rules.mk
+
+S        := $(SRCROOT)/bzip2
+LIB_SRCS := blocksort.c bzlib.c compress.c crctable.c decompress.c huffman.c randtable.c
+LIB_OBJS := $(patsubst %,$(OBJ)/lib/%.o,$(basename $(LIB_SRCS)))
+DYLIB    := $(OBJ)/libbz2.1.0.dylib
+FLAGS    := $(BASE_CFLAGS) -I$(S) -isystem $(SDK)/System/Library/Frameworks/System.framework/PrivateHeaders
+
+all: $(DYLIB) $(OBJ)/bzip2 $(OBJ)/bzip2recover
+
+$(OBJ)/lib/%.o: $(S)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(FLAGS) -c $< -o $@
+
+$(DYLIB): $(LIB_OBJS)
+	$(CC) $(BASE_LDFLAGS) -dynamiclib -install_name /usr/lib/libbz2.1.0.dylib \
+		-compatibility_version 1 -current_version 1.0.8 \
+		-Wl,-unexported_symbols_list,$(CURDIR)/debian/unexports $(LIB_OBJS) -o $@
+
+$(OBJ)/tools/%.o: $(S)/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(FLAGS) -c $< -o $@
+
+$(OBJ)/%: $(OBJ)/tools/%.o $(DYLIB)
+	$(CC) $(BASE_LDFLAGS) $< $(DYLIB) -o $@
+
+install: all
+	install -d $(ROOT)/usr/lib $(ROOT)/usr/include $(ROOT)/usr/bin $(ROOT)/usr/share/man/man1
+	install -m 755 $(DYLIB) $(ROOT)/usr/lib/
+	ln -sf libbz2.1.0.dylib $(ROOT)/usr/lib/libbz2.dylib
+	install -m 644 $(S)/bzlib.h $(ROOT)/usr/include/
+	install -m 755 $(OBJ)/bzip2 $(OBJ)/bzip2recover $(ROOT)/usr/bin/
+	ln -f $(ROOT)/usr/bin/bzip2 $(ROOT)/usr/bin/bunzip2
+	ln -f $(ROOT)/usr/bin/bzip2 $(ROOT)/usr/bin/bzcat
+	install -m 755 $(S)/bzdiff $(S)/bzmore $(ROOT)/usr/bin/
+	ln -sf bzdiff $(ROOT)/usr/bin/bzcmp
+	ln -sf bzmore $(ROOT)/usr/bin/bzless
+	install -m 644 $(S)/bzdiff.1 $(S)/bzip2.1 $(S)/bzmore.1 $(ROOT)/usr/share/man/man1/
+	ln -sf bzip2.1 $(ROOT)/usr/share/man/man1/bunzip2.1
+	ln -sf bzip2.1 $(ROOT)/usr/share/man/man1/bzcat.1
+	ln -sf bzip2.1 $(ROOT)/usr/share/man/man1/bzip2recover.1
+	ln -sf bzdiff.1 $(ROOT)/usr/share/man/man1/bzcmp.1
+	ln -sf bzmore.1 $(ROOT)/usr/share/man/man1/bzless.1
+
+.PHONY: all install

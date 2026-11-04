@@ -1,0 +1,37 @@
+Description: No arm64 vector CRC
+ The vector CRC stays on x86_64 only.
+ On arm64 bzip2 uses its table CRC.
+Author: The Blueberry Pie OS Authors
+Forwarded: not-needed
+Last-Update: 2026-11-04
+
+--- a/bzip2/bzlib.c
++++ b/bzip2/bzlib.c
+@@ -35,7 +35,8 @@
+ #include <libkern/OSAtomic.h>
+ #endif
+ 
+-#if defined(__x86_64__) || defined(__arm64__)
++/* Modified 2026-11-04: no arm64 vector CRC; arm64 uses the table CRC (bzip2 licence, condition 3). */
++#if defined(__x86_64__)
+ extern int  crc32_vec(int crc, char *p, int len);
+ #endif
+ 
+@@ -812,8 +813,6 @@ int BZ_API(BZ2_bzDecompress) ( bz_stream
+ #if defined(__x86_64__)
+    uint64_t capabilities = _get_cpu_capabilities();
+     Bool    useAsm = (capabilities & (kHasAES));
+-#elif defined(__arm64__)
+-    Bool    useAsm = True;
+ #endif
+ 
+    Bool    corrupt;
+@@ -838,7 +837,7 @@ int BZ_API(BZ2_bzDecompress) ( bz_stream
+         // compute CRC at the end
+         {
+             int crc_length = s->strm->next_out - p;
+-#if defined(__x86_64__) || defined(__arm64__)
++#if defined(__x86_64__)
+             if (useAsm && crc_length>=16) {
+                 int vec_length = ((crc_length>>4)<<4); 
+                 s->calculatedBlockCRC = crc32_vec(s->calculatedBlockCRC, p, vec_length);

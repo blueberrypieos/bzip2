@@ -1,0 +1,27 @@
+Source: bzip2
+Section: utils
+Priority: optional
+Maintainer: Maxwell <maxwell@blueberrypieos.com>
+Build-Depends: pietoolchain (>= 0.1.0)
+Standards-Version: 4.7.3
+Homepage: https://github.com/apple-oss-distributions/bzip2
+Vcs-Git: https://github.com/blueberrypieos/bzip2.git -b blueberry-pie-os/latest
+Vcs-Browser: https://github.com/blueberrypieos/bzip2
+Rules-Requires-Root: no
+
+Package: bzip2
+Architecture: darwin-arm64
+Essential: yes
+Priority: required
+Depends: libsystem
+Description: bzip2 compression library and tools
+ The bzip2 compression library, compression and recovery tools, and
+ scripts for comparing and viewing compressed files.
+
+Package: bzip2-dev
+Section: libdevel
+Priority: optional
+Architecture: darwin-arm64
+Depends: bzip2 (= ${binary:Version})
+Description: bzip2 compression library: development files
+ The bzlib.h header for building against libbz2.
